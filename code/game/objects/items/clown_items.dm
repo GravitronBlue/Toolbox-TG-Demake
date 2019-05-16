@@ -26,37 +26,16 @@
 	grind_results = list("lye" = 10)
 	var/cleanspeed = 35 //slower than mop
 	force_string = "robust... against germs"
-	var/uses = 100
 
 /obj/item/soap/ComponentInitialize()
 	. = ..()
 	AddComponent(/datum/component/slippery, 80)
-
-/obj/item/soap/examine(mob/user)
-	. = ..()
-	var/max_uses = initial(uses)
-	var/msg = "It looks like it just came out of the package."
-	if(uses != max_uses)
-		var/percentage_left = uses / max_uses
-		switch(percentage_left)
-			if(0 to 0.15)
-				msg = "There's just a tiny bit left of what it used to be, you're not sure it'll last much longer."
-			if(0.15 to 0.30)
-				msg = "It's dissolved quite a bit, but there's still some life to it."
-			if(0.30 to 0.50)
-				msg = "It's past its prime, but it's definitely still good."
-			if(0.50 to 0.75)
-				msg = "It's started to get a little smaller than it used to be, but it'll definitely still last for a while."
-			else
-				msg = "It's seen some light use, but it's still pretty fresh."
-	to_chat(user, "<span class='notice'>[msg]</span>")
 
 /obj/item/soap/nanotrasen
 	desc = "A heavy duty bar of Nanotrasen brand soap. Smells of plasma."
 	grind_results = list("plasma" = 10, "lye" = 10)
 	icon_state = "soapnt"
 	cleanspeed = 28 //janitor gets this
-	uses = 300
 
 /obj/item/soap/homemade
 	desc = "A homemade bar of soap. Smells of... well...."
@@ -79,12 +58,6 @@
 	new /obj/effect/particle_effect/foam(loc)
 	return (TOXLOSS)
 
-/obj/item/soap/proc/decreaseUses(mob/user)
-	uses--
-	if(uses <= 0)
-		to_chat(user, "<span class='warning'>[src] crumbles into tiny bits!</span>")
-		qdel(src)
-
 /obj/item/soap/afterattack(atom/target, mob/user, proximity)
 	. = ..()
 	if(!proximity || !check_allowed_items(target))
@@ -98,7 +71,6 @@
 		if(do_after(user, src.cleanspeed, target = target))
 			to_chat(user, "<span class='notice'>You scrub \the [target.name] out.</span>")
 			qdel(target)
-			decreaseUses(user)
 
 	else if(ishuman(target) && user.zone_selected == BODY_ZONE_PRECISE_MOUTH)
 		var/mob/living/carbon/human/H = user
@@ -110,7 +82,6 @@
 			user.visible_message("<span class='warning'>\the [user] washes \the [target] with [src.name]!</span>", "<span class='notice'>You wash \the [target] with [src.name]!</span>")
 			H.adjust_hygiene(20)
 		H.update_body()
-		decreaseUses(user)
 		return
 	else if(istype(target, /obj/structure/window))
 		user.visible_message("[user] begins to clean \the [target.name] with [src]...", "<span class='notice'>You begin to clean \the [target.name] with [src]...</span>")
@@ -118,7 +89,6 @@
 			to_chat(user, "<span class='notice'>You clean \the [target.name].</span>")
 			target.remove_atom_colour(WASHABLE_COLOUR_PRIORITY)
 			target.set_opacity(initial(target.opacity))
-			decreaseUses(user)
 	else
 		user.visible_message("[user] begins to clean \the [target.name] with [src]...", "<span class='notice'>You begin to clean \the [target.name] with [src]...</span>")
 		if(do_after(user, src.cleanspeed, target = target))
@@ -128,7 +98,6 @@
 			target.remove_atom_colour(WASHABLE_COLOUR_PRIORITY)
 			SEND_SIGNAL(target, COMSIG_COMPONENT_CLEAN_ACT, CLEAN_MEDIUM)
 			target.wash_cream()
-			decreaseUses(user)
 	return
 
 
